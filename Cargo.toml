@@ -1,0 +1,12 @@
+[package]
+name = "merkle_tree"
+version = "0.1.0"
+authors = ["kushti <alex.chepurnoy@iohk.io>"]
+
+[[bin]]
+name = "merkle"
+path = "src/merkle.rs"
+
+[dependencies]
+ring = "0.2.3"
+rust-base58 = "0.0.4"
