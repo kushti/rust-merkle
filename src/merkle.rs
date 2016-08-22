@@ -9,6 +9,11 @@ use std::fs;
 use std::borrow::ToOwned;
 use rust_base58::ToBase58;
 
+struct MerkleAuth {
+    leafs_num: u32,
+    root_value: Digest
+}
+
 fn print_usage(program_name: &str) {
     let program_file_name = std::path::Path::new(program_name)
         .file_name().unwrap().to_str().unwrap();
@@ -92,7 +97,7 @@ fn root(digest_alg: &'static digest::Algorithm, prev_level: &Vec<&[u8]>) -> Dige
     }
 }
 
-fn merkle(digest_alg: &'static digest::Algorithm, non_empty_leafs: &Vec<Digest>) -> Digest {
+fn merkle(digest_alg: &'static digest::Algorithm, non_empty_leafs: &Vec<Digest>) -> MerkleAuth {
     let digest_size = digest_alg.output_len;
     let zero_hash_vec = vec![0 as u8; digest_size];
     let zero_hash = zero_hash_vec.as_slice();
@@ -109,11 +114,11 @@ fn merkle(digest_alg: &'static digest::Algorithm, non_empty_leafs: &Vec<Digest>)
         leafs.append(&mut eleafs)
     }
 
-    root(digest_alg, &leafs)
+    MerkleAuth {leafs_num: ne_count, root_value: root(digest_alg, &leafs)}
 }
 
 fn folder_merkle(digest_alg: &'static digest::Algorithm,
-                 folder_path: &std::path::Path) -> Result<Digest, std::string::String> {
+                 folder_path: &std::path::Path) -> Result<MerkleAuth, std::string::String> {
     match fs::read_dir(folder_path) {
         Ok(dir) => {
             let digests = dir.filter_map(|entry| {
@@ -140,8 +145,9 @@ fn run(digest_name: &str, folder_path: &std::path::Path) -> Result<(), String> {
     };
 
     match folder_merkle(digest_alg, folder_path){
-        Ok(digest) => {
-            println!("folder authenticating root: {}", digest.as_ref().to_base58());
+        Ok(ma) => {
+            println!("number of non-zero elements in a tree: {}", ma.leafs_num);
+            println!("tree authenticating root: {}", ma.root_value.as_ref().to_base58());
             Ok(())
         },
         Err(s) => Err(s)
